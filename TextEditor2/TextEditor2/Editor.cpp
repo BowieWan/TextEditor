@@ -57,24 +57,41 @@ void Editor::Undo()
 	textBlocks.front().Undo();
 }
 
-bool Editor::CursorLeft()
+bool Editor::UpSelect()
 {
-	return textBlocks.front().CursorLeft();
+	if (!CursorUp())return false;
+	CursorDown();
+	SelectBegin();
+	if (textBlocks.front().CursorUp() == false)//å¦‚æœæ²¡æœ‰ä¸Šä¸€è¡Œ
+	{
+		while (textBlocks.front().GetCursorPos().second != 1)//è¡Œä¸å˜ åˆ—ç§»åŠ¨åˆ°å½“å‰è¡Œçš„èµ·å§‹
+			textBlocks.front().CursorLeft();
+	}
+	SelectEnd();
 }
-
-bool Editor::CursorRight()
+bool Editor::DownSelect()
 {
-	return textBlocks.front().CursorRight();
+	if (!CursorDown())return false;
+	CursorUp();
+	SelectBegin();
+	if (textBlocks.front().CursorDown() == false)//å¦‚æœæ²¡æœ‰ä¸‹ä¸€è¡Œ
+	{
+		//è¡Œä¸å˜ åˆ—ç§»åŠ¨åˆ°å½“å‰è¡Œçš„æœ«å°¾
+		while (textBlocks.front().CursorRight() != false) {}
+	}
+	SelectEnd();
 }
-
-bool Editor::CursorUp()
+bool Editor::LeftSelect()
 {
-	return textBlocks.front().CursorUp();
+	if (!CursorLeft())return false;
+	CursorRight();
+	textBlocks.front().CursorLeft();//è°ƒç”¨å…‰æ ‡å·¦ç§»å‡½æ•°
 }
-
-bool Editor::CursorDown()
+bool Editor::RightSelect()
 {
-	return textBlocks.front().CursorDown();
+	if (!CursorRight())return false;
+	CursorLeft();
+	textBlocks.front().CursorRight();//è°ƒç”¨å…‰æ ‡å³ç§»å‡½æ•°
 }
 
 bool Editor::SetCursor(size_t lineIndex, line_size_type charIndex)
@@ -106,9 +123,9 @@ bool Editor::UpSelect()
 {
 	if (!CursorUp())return false;
 	SelectBegin();
-	if (textBlocks.front().CursorUp() == false)//Èç¹ûÃ»ÓĞÉÏÒ»ĞĞ
+	if (textBlocks.front().CursorUp() == false)//å¦‚æœæ²¡æœ‰ä¸Šä¸€è¡Œ
 	{
-		while (textBlocks.front().GetCursorPos().second != 1)//ĞĞ²»±ä ÁĞÒÆ¶¯µ½µ±Ç°ĞĞµÄÆğÊ¼
+		while (textBlocks.front().GetCursorPos().second != 1)//è¡Œä¸å˜ åˆ—ç§»åŠ¨åˆ°å½“å‰è¡Œçš„èµ·å§‹
 			textBlocks.front().CursorLeft();
 	}
 	SelectEnd();
@@ -117,9 +134,9 @@ bool Editor::DownSelect()
 {
 	if (!CursorDown())return false;
 	SelectBegin();
-	if (textBlocks.front().CursorDown() == false)//Èç¹ûÃ»ÓĞÏÂÒ»ĞĞ
+	if (textBlocks.front().CursorDown() == false)//å¦‚æœæ²¡æœ‰ä¸‹ä¸€è¡Œ
 	{
-		//ĞĞ²»±ä ÁĞÒÆ¶¯µ½µ±Ç°ĞĞµÄÄ©Î²
+		//è¡Œä¸å˜ åˆ—ç§»åŠ¨åˆ°å½“å‰è¡Œçš„æœ«å°¾
 		while (textBlocks.front().CursorRight() != false) {}
 	}
 	SelectEnd();
@@ -127,12 +144,12 @@ bool Editor::DownSelect()
 bool Editor::LeftSelect()
 {
 	if (!CursorLeft())return false;
-	textBlocks.front().CursorLeft();//µ÷ÓÃ¹â±ê×óÒÆº¯Êı
+	textBlocks.front().CursorLeft();//è°ƒç”¨å…‰æ ‡å·¦ç§»å‡½æ•°
 }
 bool Editor::RightSelect()
 {
 	if (!CursorRight())return false;
-	textBlocks.front().CursorRight();//µ÷ÓÃ¹â±êÓÒÒÆº¯Êı
+	textBlocks.front().CursorRight();//è°ƒç”¨å…‰æ ‡å³ç§»å‡½æ•°
 }
 
 void Editor::Copy()
@@ -140,24 +157,24 @@ void Editor::Copy()
 	if (!textBlocks.front().HasSelect())return;
 	if (OpenClipboard(hwnd))
 	{
-		EmptyClipboard();//Çå¿Õ¼ôÇĞ°åÄÚÈİ
+		EmptyClipboard();//æ¸…ç©ºå‰ªåˆ‡æ¿å†…å®¹
 		wstring str = textBlocks.front().GetSelectString();
-		HGLOBAL hClip= GlobalAlloc(GHND, str.length());//·ÖÅäĞÂÈ«¾ÖÄÚ´æ¿Õ¼ä
-		wchar_t *pBuf = (wchar_t *)GlobalLock(hClip);//Ëø×¡È«¾ÖÄÚ´æ¿Õ¼ä
-		memcpy(pBuf, str.data(), str.length());//½«ÄÚÈİĞ´ÈëÈ«¾ÖÄÚ´æ¿Õ¼ä
-		//½«¿Õ¼äÖĞµÄÄÚÈİĞ´Èë¼ôÇĞ°å
-		SetClipboardData(CF_UNICODETEXT, hClip);//ÉèÖÃÊı¾İ
-		GlobalUnlock(hClip);//½âËø
-		GlobalFree(hClip);//ÊÍ·ÅÈ«¾ÖÄÚ´æ¿Õ¼ä
-		CloseClipboard();//¹Ø±Õ¼ôÇĞ°å
+		HGLOBAL hClip= GlobalAlloc(GHND, str.length());//åˆ†é…æ–°å…¨å±€å†…å­˜ç©ºé—´
+		wchar_t *pBuf = (wchar_t *)GlobalLock(hClip);//é”ä½å…¨å±€å†…å­˜ç©ºé—´
+		memcpy(pBuf, str.data(), str.length());//å°†å†…å®¹å†™å…¥å…¨å±€å†…å­˜ç©ºé—´
+		//å°†ç©ºé—´ä¸­çš„å†…å®¹å†™å…¥å‰ªåˆ‡æ¿
+		SetClipboardData(CF_UNICODETEXT, hClip);//è®¾ç½®æ•°æ®
+		GlobalUnlock(hClip);//è§£é”
+		GlobalFree(hClip);//é‡Šæ”¾å…¨å±€å†…å­˜ç©ºé—´
+		CloseClipboard();//å…³é—­å‰ªåˆ‡æ¿
 	}
 }
 
 void Editor::Paste()
 {
-	if (OpenClipboard(hwnd)) { // ´ò¿ª¼ôÌù°å
-		HANDLE hData = GetClipboardData(CF_UNICODETEXT); // »ñÈ¡¼ôÌù°åÊı¾İ¾ä±ú
-		CloseClipboard(); // ¹Ø±Õ¼ôÌù°å
+	if (OpenClipboard(hwnd)) { // æ‰“å¼€å‰ªè´´æ¿
+		HANDLE hData = GetClipboardData(CF_UNICODETEXT); // è·å–å‰ªè´´æ¿æ•°æ®å¥æŸ„
+		CloseClipboard(); // å…³é—­å‰ªè´´æ¿
 	}
 }
 
